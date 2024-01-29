@@ -17,7 +17,7 @@
         android:theme="@style/Theme.Roof_Segmentation"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name="ai.onnxruntime.example.roofSegmenter.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -1,4 +1,4 @@
-package ai.onnxruntime.example.superresolution
+package ai.onnxruntime.example.roofSegmenter
 
 import org.junit.Test
 

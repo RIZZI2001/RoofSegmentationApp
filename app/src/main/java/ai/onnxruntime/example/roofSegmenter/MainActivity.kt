@@ -1,7 +1,7 @@
-package ai.onnxruntime.example.superresolution
+package ai.onnxruntime.example.roofSegmenter
 
 import ai.onnxruntime.*
-import ai.onnxruntime.example.roofSegmenter.RoofSegmenter
+import ai.onnxruntime.example.roofSegmenter.R
 import ai.onnxruntime.extensions.OrtxPackage
 import android.annotation.SuppressLint
 import android.app.Activity

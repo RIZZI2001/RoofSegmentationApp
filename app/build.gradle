@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace 'ai.onnxruntime.example.superresolution'
+    namespace 'ai.onnxruntime.example.roofSegmenter'
     compileSdk 32
 
     defaultConfig {
-        applicationId "ai.onnxruntime.example.superresolution"
+        applicationId "ai.onnxruntime.example.roofSegmenter"
         minSdk 24
         targetSdk 32
         versionCode 1
