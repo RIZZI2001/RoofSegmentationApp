@@ -1,0 +1,37 @@
+{
+  "buildFiles": [
+    "/home/moritz/Documents/GitHub/RoofSegmentationApp/sdk/libcxx_helper/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/moritz/Android/Sdk/cmake/3.18.1/bin/ninja",
+      "-C",
+      "/home/moritz/Documents/GitHub/RoofSegmentationApp/sdk/.cxx/Debug/5t4q3g4g/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/moritz/Android/Sdk/cmake/3.18.1/bin/ninja",
+    "-C",
+    "/home/moritz/Documents/GitHub/RoofSegmentationApp/sdk/.cxx/Debug/5t4q3g4g/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "opencv_jni_shared::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86",
+      "artifactName": "opencv_jni_shared",
+      "output": "/home/moritz/Documents/GitHub/RoofSegmentationApp/sdk/.cxx/Debug/5t4q3g4g/x86/libopencv_jni_shared.a"
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "/home/moritz/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/home/moritz/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++.lld"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}

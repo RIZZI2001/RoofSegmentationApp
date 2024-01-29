@@ -1,1 +1,0 @@
-/home/moritz/Documents/GitHub/RoofSegApp/sdk/build/intermediates/cxx/Debug/2mx3k394/obj/x86

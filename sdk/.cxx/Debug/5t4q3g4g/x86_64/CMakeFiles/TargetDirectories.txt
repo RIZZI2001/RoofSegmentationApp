@@ -1,0 +1,3 @@
+/home/moritz/Documents/GitHub/RoofSegmentationApp/sdk/.cxx/Debug/5t4q3g4g/x86_64/CMakeFiles/rebuild_cache.dir
+/home/moritz/Documents/GitHub/RoofSegmentationApp/sdk/.cxx/Debug/5t4q3g4g/x86_64/CMakeFiles/edit_cache.dir
+/home/moritz/Documents/GitHub/RoofSegmentationApp/sdk/.cxx/Debug/5t4q3g4g/x86_64/CMakeFiles/opencv_jni_shared.dir

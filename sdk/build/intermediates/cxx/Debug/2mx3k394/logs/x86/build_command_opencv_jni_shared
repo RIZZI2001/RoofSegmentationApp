@@ -1,4 +1,0 @@
-/home/moritz/Android/Sdk/cmake/3.18.1/bin/ninja \
-  -C \
-  /home/moritz/Documents/GitHub/RoofSegApp/sdk/.cxx/Debug/2mx3k394/x86 \
-  opencv_jni_shared

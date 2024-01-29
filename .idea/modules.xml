@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/sdk/super_resolution.sdk.main.iml" filepath="$PROJECT_DIR$/.idea/modules/sdk/super_resolution.sdk.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/sdk/roof_Segmenter.sdk.main.iml" filepath="$PROJECT_DIR$/.idea/modules/sdk/roof_Segmenter.sdk.main.iml" />
     </modules>
   </component>
 </project>

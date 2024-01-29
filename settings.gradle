@@ -12,6 +12,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "super_resolution"
+rootProject.name = "roof_Segmenter"
 include ':app'
 include ':sdk'
