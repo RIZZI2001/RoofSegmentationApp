@@ -1,0 +1,2 @@
+# RoofSegmentationApp
+My bachelors project
