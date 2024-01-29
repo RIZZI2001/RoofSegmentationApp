@@ -1,7 +1,6 @@
 package ai.onnxruntime.example.roofSegmenter
 
 import ai.onnxruntime.*
-import ai.onnxruntime.example.roofSegmenter.R
 import ai.onnxruntime.extensions.OrtxPackage
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -9,6 +8,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.KeyEvent
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -16,6 +17,8 @@ import android.widget.Toast
 import androidx.activity.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDialog
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.graphics.drawable.toBitmap
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
@@ -27,15 +30,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ortSession: OrtSession
     private var inputImage: ImageButton? = null
     private var outputImage: ImageView? = null
+    private var optionsButton: Button? = null
     private var segmentRoofButton: Button? = null
+    private lateinit var options: Options
+    private var optionsPanel: OptionsPanel? = null
 
     @SuppressLint("UseCompatLoadingForDrawables")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        options = Options(this)
         inputImage = findViewById(R.id.inputImage)
         outputImage = findViewById(R.id.imageView)
+        optionsButton = findViewById(R.id.options_Button)
         segmentRoofButton = findViewById(R.id.segment_Roof_Button)
 
         // Initialize Ort Session and register the onnxruntime extensions package.
@@ -43,15 +51,24 @@ class MainActivity : AppCompatActivity() {
         sessionOptions.registerCustomOpLibrary(OrtxPackage.getLibraryPath())
         ortSession = ortEnv.createSession(readModel(), sessionOptions)
 
+        optionsButton?.setOnClickListener {
+            optionsPanel = OptionsPanel(this, options)
+            optionsPanel?.show()
+        }
         segmentRoofButton?.setOnClickListener {
-            try {
-                performRoofSegmentation(ortSession)
-                Toast.makeText(baseContext, "Segmented roof successfully!", Toast.LENGTH_SHORT)
+            if(inputImage?.drawable == null) {
+                Toast.makeText(baseContext, "Please select an image first", Toast.LENGTH_SHORT)
                     .show()
-            } catch (e: Exception) {
-                Log.e("Exception caught while segmenting roof", e.toString())
-                Toast.makeText(baseContext, "Failed to segment roof", Toast.LENGTH_SHORT)
-                    .show()
+            } else {
+                try {
+                    performRoofSegmentation(ortSession)
+                    Toast.makeText(baseContext, "Segmented roof successfully!", Toast.LENGTH_SHORT)
+                        .show()
+                } catch (e: Exception) {
+                    Log.e("Exception caught while segmenting roof", e.toString())
+                    Toast.makeText(baseContext, "Failed to segment roof", Toast.LENGTH_SHORT)
+                        .show()
+                }
             }
         }
 

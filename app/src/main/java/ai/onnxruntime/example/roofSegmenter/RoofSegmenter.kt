@@ -144,6 +144,8 @@ internal class RoofSegmenter(
     fun segmentRoof(context: Context, bitmap: Bitmap, ortEnv: OrtEnvironment, ortSession: OrtSession): Result {
         var result = Result()
 
+        val options = Options(context)
+
         OpenCVLoader.initDebug() // Initialize OpenCV. This is required for the bitmap to mat conversion!
 
         //Store original size to scale the output bitmap back to the original size
@@ -235,11 +237,13 @@ internal class RoofSegmenter(
                 // Add the mask to the full mask at the correct position.
                 for (i in mask.indices) {
                     for (j in 0 until mask[0].size) {
-                        //fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()] = mask[i][j]
-
-                        // Using or operator to combine overlapping masks
-                        val currentValue = fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()]
-                        fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()] = currentValue || mask[i][j]
+                        if(options.merge_masks) {
+                            // Using or operator to combine overlapping masks
+                            val currentValue = fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()]
+                            fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()] = currentValue || mask[i][j]
+                        } else {
+                            fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()] = mask[i][j]
+                        }
                     }
                 }
 
@@ -249,7 +253,12 @@ internal class RoofSegmenter(
             //Add the full mask to the result by scaling the mask back to the original size and overlaying it on top of the original image
             result.outputBitmap = overlayBitmaps(bitmap,
                 Bitmap.createScaledBitmap(
-                    createMaskOverlayBitmap(fullMask, intArrayOf(0, 0, 255, 127)
+                    createMaskOverlayBitmap(fullMask, intArrayOf(
+                        Color.red(options.color?: 0),
+                        Color.green(options.color?: 0),
+                        Color.blue(options.color?: 0),
+                        Color.alpha(options.color?: 0)
+                    )
                 ), originalWidth, originalHeight, false)
             )
         }
