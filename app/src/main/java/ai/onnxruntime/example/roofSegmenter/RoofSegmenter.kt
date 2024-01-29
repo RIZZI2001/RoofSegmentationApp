@@ -21,7 +21,9 @@ import kotlin.math.roundToInt
 
 internal data class Result(
     var outputString: String? = null,
-    var outputBitmap: Bitmap? = null
+    var outputBitmap: Bitmap? = null,
+    var onnxTime: Float? = null,
+    var fullTime: Float? = null,
 )
 
 internal class RoofSegmenter(
@@ -142,6 +144,7 @@ internal class RoofSegmenter(
 
     // Main function that performs roof segmentation
     fun segmentRoof(context: Context, bitmap: Bitmap, ortEnv: OrtEnvironment, ortSession: OrtSession): Result {
+        val fullStartTime = System.currentTimeMillis() // Start measuring the runtime of the whole function
         var result = Result()
 
         val options = Options(context)
@@ -171,7 +174,9 @@ internal class RoofSegmenter(
         )
 
         inputTensor.use {
+            val startOnnxTime = System.currentTimeMillis() // Start measuring the runtime of the model
             val output = ortSession.run(Collections.singletonMap("images", inputTensor)) // Run the model!
+            val endOnnxTime = System.currentTimeMillis() // Stop measuring the runtime of the model
 
             var maskLayers = Array(32) { FloatArray(25600) { 0f } }
             var boxes = Array(8400) { FloatArray(5) { 0f } }
@@ -250,6 +255,7 @@ internal class RoofSegmenter(
                 // Remove all detections that have an IoU > 0.7 with the current detection to eliminate overlapping detections
                 detections.retainAll { iou(it, currentDet) < 0.7 }
             }
+            val fullEndTime = System.currentTimeMillis() // Stop measuring the runtime of the whole function
             //Add the full mask to the result by scaling the mask back to the original size and overlaying it on top of the original image
             result.outputBitmap = overlayBitmaps(bitmap,
                 Bitmap.createScaledBitmap(
@@ -261,6 +267,8 @@ internal class RoofSegmenter(
                     )
                 ), originalWidth, originalHeight, false)
             )
+            result.onnxTime = (endOnnxTime - startOnnxTime) / 1000f // Calculate the runtime of the model
+            result.fullTime = (fullEndTime - fullStartTime) / 1000f // Calculate the runtime of the whole function
         }
         return result
     }

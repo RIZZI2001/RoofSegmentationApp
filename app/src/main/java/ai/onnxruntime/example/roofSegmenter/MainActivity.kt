@@ -62,8 +62,6 @@ class MainActivity : AppCompatActivity() {
             } else {
                 try {
                     performRoofSegmentation(ortSession)
-                    Toast.makeText(baseContext, "Segmented roof successfully!", Toast.LENGTH_SHORT)
-                        .show()
                 } catch (e: Exception) {
                     Log.e("Exception caught while segmenting roof", e.toString())
                     Toast.makeText(baseContext, "Failed to segment roof", Toast.LENGTH_SHORT)
@@ -110,5 +108,7 @@ class MainActivity : AppCompatActivity() {
         if (result != null) {
             outputImage?.setImageBitmap(result.outputBitmap)
         };
+        Toast.makeText(baseContext, "Success! Time: ${result?.fullTime} (${result?.onnxTime})", Toast.LENGTH_SHORT)
+            .show()
     }
 }
