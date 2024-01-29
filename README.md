@@ -1,2 +1,2 @@
-# RoofSegmentationApp
-My bachelors project
+# RoofSegApp
+ My bachelors thesis project

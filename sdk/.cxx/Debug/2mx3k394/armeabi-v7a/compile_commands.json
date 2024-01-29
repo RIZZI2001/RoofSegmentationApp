@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/moritz/Documents/GitHub/RoofSegApp/sdk/.cxx/Debug/2mx3k394/armeabi-v7a",
+  "command": "/home/moritz/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=armv7-none-linux-androideabi21 --gcc-toolchain=/home/moritz/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64 --sysroot=/home/moritz/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -o CMakeFiles/opencv_jni_shared.dir/dummy.cpp.o -c /home/moritz/Documents/GitHub/RoofSegApp/sdk/libcxx_helper/dummy.cpp",
+  "file": "/home/moritz/Documents/GitHub/RoofSegApp/sdk/libcxx_helper/dummy.cpp"
+}
+]
