@@ -19,7 +19,9 @@
         android:id="@+id/merge_masks_switch"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Merge Masks" />
+        android:text="Merge Masks"
+        android:textSize="18sp"
+        android:textColor="@color/black"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -123,5 +125,41 @@
         android:layout_height="40dp"
         android:layout_marginTop="16dp"
         android:background="#000000" />
+
+    <TextView
+        android:id="@+id/BoxThresholdText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Box Threshold: 0.5"
+        android:textSize="18sp"
+        android:textColor="@color/black"/>
+
+    <SeekBar
+        android:id="@+id/seekBarBoxThreshold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="0"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="4dp" />
+
+    <TextView
+        android:id="@+id/MaskThresholdText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Mask Threshold: 0.5"
+        android:textSize="18sp"
+        android:textColor="@color/black"/>
+
+    <SeekBar
+        android:id="@+id/seekBarMaskThreshold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="0"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="4dp" />
 
 </LinearLayout>

@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private var outputImage: ImageView? = null
     private var optionsButton: Button? = null
     private var segmentRoofButton: Button? = null
+    private var exportButton: Button? = null
     private lateinit var options: Options
     private var optionsPanel: OptionsPanel? = null
 
@@ -45,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         outputImage = findViewById(R.id.imageView)
         optionsButton = findViewById(R.id.options_Button)
         segmentRoofButton = findViewById(R.id.segment_Roof_Button)
+        exportButton = findViewById(R.id.export_Button)
 
         // Initialize Ort Session and register the onnxruntime extensions package.
         val sessionOptions: OrtSession.SessionOptions = OrtSession.SessionOptions()
@@ -69,9 +71,17 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
+        inputImage?.setImageDrawable(getDrawable(R.drawable.default_image))
         inputImage?.setOnClickListener {
             pickImageFromGallery()
+        }
+        exportButton?.setOnClickListener {
+            if(outputImage?.drawable == null) {
+                Toast.makeText(baseContext, "Please segment a roof first", Toast.LENGTH_SHORT)
+                    .show()
+            } else {
+                exportImageToGallery()
+            }
         }
     }
 
@@ -90,6 +100,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    private fun exportImageToGallery() {
+        val bitmap = outputImage?.drawable?.toBitmap()
+        MediaStore.Images.Media.insertImage(
+            contentResolver,
+            bitmap,
+            UUID.randomUUID().toString() + ".png",
+            "Roof Segmentation"
+        )
+        Toast.makeText(baseContext, "Image saved to gallery", Toast.LENGTH_SHORT)
+            .show()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         ortEnv.close()
@@ -98,7 +120,7 @@ class MainActivity : AppCompatActivity() {
 
     // Read the nanoroof.onnx model from the raw resources folder.
     private fun readModel(): ByteArray {
-        val modelID = R.raw.nanoroof
+        val modelID = R.raw.nano3
         return resources.openRawResource(modelID).readBytes()
     }
 
@@ -107,8 +129,12 @@ class MainActivity : AppCompatActivity() {
         var result = inputImage?.drawable?.toBitmap()?.let { roofSegmenter.segmentRoof(this, it, ortEnv, ortSession) }
         if (result != null) {
             outputImage?.setImageBitmap(result.outputBitmap)
-        };
-        Toast.makeText(baseContext, "Success! Time: ${result?.fullTime} (${result?.onnxTime})", Toast.LENGTH_SHORT)
-            .show()
+            Toast.makeText(baseContext, "Success! Time: ${result?.fullTime} (${result?.onnxTime})", Toast.LENGTH_SHORT)
+                .show()
+        } else {
+            Toast.makeText(baseContext, "No roofs were found.", Toast.LENGTH_SHORT)
+                .show()
+            outputImage?.setImageBitmap(null)
+        }
     }
 }

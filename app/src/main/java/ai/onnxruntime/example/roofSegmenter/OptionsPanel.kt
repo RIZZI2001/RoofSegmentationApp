@@ -9,6 +9,7 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.SeekBar
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatDialog
 import androidx.appcompat.widget.SwitchCompat
 
@@ -22,6 +23,10 @@ class OptionsPanel(
     private lateinit var seekBarBlue: SeekBar
     private lateinit var seekBarAlpha: SeekBar
     private lateinit var colorPreview: View
+    private lateinit var boxThresholdText: TextView
+    private lateinit var boxThresholdBar: SeekBar
+    private lateinit var maskThresholdText: TextView
+    private lateinit var maskThresholdBar: SeekBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +52,13 @@ class OptionsPanel(
 
         setupColorPicker(options.color)
 
+        boxThresholdText = dialog.findViewById(R.id.BoxThresholdText)!!
+        boxThresholdBar = dialog.findViewById(R.id.seekBarBoxThreshold)!!
+        maskThresholdText = dialog.findViewById(R.id.MaskThresholdText)!!
+        maskThresholdBar = dialog.findViewById(R.id.seekBarMaskThreshold)!!
+
+        setupThresholds(options.box_threshold, options.mask_threshold)
+
         // Handle back button press to dismiss the dialog
         dialog.setOnKeyListener { _, keyCode, _ ->
             if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -66,10 +78,23 @@ class OptionsPanel(
         seekBarAlpha.progress = Color.alpha(color?: 0)
 
         updateColorPreview()
-        setupSeekBarListener(seekBarRed)
-        setupSeekBarListener(seekBarGreen)
-        setupSeekBarListener(seekBarBlue)
-        setupSeekBarListener(seekBarAlpha)
+        setupSeekBarListener(seekBarRed, "color")
+        setupSeekBarListener(seekBarGreen, "color")
+        setupSeekBarListener(seekBarBlue, "color")
+        setupSeekBarListener(seekBarAlpha, "color")
+    }
+
+    private fun setupThresholds(box: Float?, mask: Float?) {
+        val boxInt = box?.times(100)?.toInt()
+        val maskInt = mask?.times(100)?.toInt()
+
+        boxThresholdBar.progress = boxInt?: 0
+        maskThresholdBar.progress = maskInt?: 0
+
+        updateBoxThreshold()
+        updateMaskThreshold()
+        setupSeekBarListener(boxThresholdBar, "box")
+        setupSeekBarListener(maskThresholdBar, "mask")
     }
 
     private fun updateColorPreview() {
@@ -83,10 +108,25 @@ class OptionsPanel(
         colorPreview.setBackgroundColor(color)
     }
 
-    private fun setupSeekBarListener(seekBar: SeekBar) {
+    private fun updateBoxThreshold() {
+        val box = boxThresholdBar.progress.toFloat().div(100)
+        options.box_threshold = box
+        boxThresholdText.text = "Box Threshold: $box"
+    }
+
+    private fun updateMaskThreshold() {
+        val mask = maskThresholdBar.progress.toFloat().div(100)
+        options.mask_threshold = mask
+        maskThresholdText.text = "Mask Threshold: $mask"
+    }
+
+    private fun setupSeekBarListener(seekBar: SeekBar, type: String) {
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                updateColorPreview()
+                if(type == "color") updateColorPreview()
+                else if(type == "box") updateBoxThreshold()
+                else if(type == "mask") updateMaskThreshold()
+                else throw Exception("Invalid type: $type")
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {

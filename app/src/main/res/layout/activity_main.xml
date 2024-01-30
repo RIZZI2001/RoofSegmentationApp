@@ -56,6 +56,16 @@
                 android:layout_marginBottom="8dp"
                 android:contentDescription="Output Image"
                 android:scaleType="fitCenter"/>
+
+            <Button
+                android:id="@+id/export_Button"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="32dp"
+                android:layout_marginTop="1dp"
+                android:layout_marginEnd="32dp"
+                android:elevation="1dp"
+                android:text="Export to gallery" />
         </LinearLayout>
     </ScrollView>
 

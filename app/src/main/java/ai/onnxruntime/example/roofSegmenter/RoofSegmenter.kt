@@ -20,7 +20,6 @@ import kotlin.math.exp
 import kotlin.math.roundToInt
 
 internal data class Result(
-    var outputString: String? = null,
     var outputBitmap: Bitmap? = null,
     var onnxTime: Float? = null,
     var fullTime: Float? = null,
@@ -90,16 +89,16 @@ internal class RoofSegmenter(
     }
 
     // Applies a sigmoid function to the mask pixel and checks if it is above the threshold of 0.7
-    private fun sigThreshold(x: Float): Boolean {
+    private fun sigThreshold(x: Float, maskThreshold: Float): Boolean {
         val sig = 1 / (1 + exp(-x).toFloat())
-        return sig > 0.7
+        return sig > maskThreshold
     }
 
     // Creates a mask of booleans of the selected bounding box by cutting out the mask and applying the sigThreshold
-    private fun getMask(flatMask: FloatArray, box: FloatArray): Array<BooleanArray> {
+    private fun getMask(flatMask: FloatArray, box: FloatArray, maskThreshold: Float): Array<BooleanArray> {
         val mask = Array(160) { i ->
             BooleanArray(160) { j ->
-                sigThreshold(flatMask[i * 160 + j])
+                sigThreshold(flatMask[i * 160 + j], maskThreshold)
             }
         }
         val (x1, y1, x2, y2) = box.map { it.toInt() }
@@ -143,9 +142,9 @@ internal class RoofSegmenter(
     }
 
     // Main function that performs roof segmentation
-    fun segmentRoof(context: Context, bitmap: Bitmap, ortEnv: OrtEnvironment, ortSession: OrtSession): Result {
+    fun segmentRoof(context: Context, bitmap: Bitmap, ortEnv: OrtEnvironment, ortSession: OrtSession): Result? {
         val fullStartTime = System.currentTimeMillis() // Start measuring the runtime of the whole function
-        var result = Result()
+        var result: Result? = Result()
 
         val options = Options(context)
 
@@ -207,7 +206,7 @@ internal class RoofSegmenter(
             val croppedMasks = ArrayList<Array<BooleanArray>>() // Stores the cropped masks
             for (i in boxes.indices) {
                 val box = boxes[i]
-                if(box[4] > 0.5) {
+                if(box[4] > options.box_threshold) {
                     // converting bounding box from xc, yx, width, height to x1, y1, x2, y2 and scaling from 640x640 to 160x160
                     val x1 = ((box[0]-box[2]/2)/640*160).roundToInt().toFloat()
                     val x2 = ((box[0]+box[2]/2)/640*160).roundToInt().toFloat()
@@ -222,10 +221,13 @@ internal class RoofSegmenter(
                         }
                     }
                     detections.add(floatArrayOf(x1, y1, x2, y2, box[4], croppedMasks.size.toFloat()))
-                    croppedMasks.add(getMask(maskShape, floatArrayOf(x1, y1, x2, y2)))
+                    croppedMasks.add(getMask(maskShape, floatArrayOf(x1, y1, x2, y2), options.mask_threshold))
                 }
             }
-
+            // If nothing was detected, return an empty result
+            if(detections.isEmpty()) {
+                return null
+            }
             // Sort the detections by confidence
             detections.sortByDescending { it[4] }
 
@@ -257,7 +259,7 @@ internal class RoofSegmenter(
             }
             val fullEndTime = System.currentTimeMillis() // Stop measuring the runtime of the whole function
             //Add the full mask to the result by scaling the mask back to the original size and overlaying it on top of the original image
-            result.outputBitmap = overlayBitmaps(bitmap,
+            result?.outputBitmap = overlayBitmaps(bitmap,
                 Bitmap.createScaledBitmap(
                     createMaskOverlayBitmap(fullMask, intArrayOf(
                         Color.red(options.color?: 0),
@@ -267,8 +269,8 @@ internal class RoofSegmenter(
                     )
                 ), originalWidth, originalHeight, false)
             )
-            result.onnxTime = (endOnnxTime - startOnnxTime) / 1000f // Calculate the runtime of the model
-            result.fullTime = (fullEndTime - fullStartTime) / 1000f // Calculate the runtime of the whole function
+            result?.onnxTime = (endOnnxTime - startOnnxTime) / 1000f // Calculate the runtime of the model
+            result?.fullTime = (fullEndTime - fullStartTime) / 1000f // Calculate the runtime of the whole function
         }
         return result
     }
