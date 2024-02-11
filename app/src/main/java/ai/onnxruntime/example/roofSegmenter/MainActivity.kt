@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
 
     // Read the nanoroof.onnx model from the raw resources folder.
     private fun readModel(): ByteArray {
-        val modelID = R.raw.nano3
+        val modelID = R.raw.best
         return resources.openRawResource(modelID).readBytes()
     }
 

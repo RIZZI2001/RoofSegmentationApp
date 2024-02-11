@@ -91,6 +91,8 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
+                                                <entry key="imagePath" value="$USER_HOME$/Krita/Roof_Logo.png" />
+                                                <entry key="scalingPercent" value="62" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -123,9 +125,8 @@
                                   <option name="values">
                                     <map>
                                       <entry key="backgroundAssetType" value="COLOR" />
-                                      <entry key="backgroundColor" value="313131" />
-                                      <entry key="foregroundAssetType" value="CLIP_ART" />
-                                      <entry key="outputName" value="house_icon" />
+                                      <entry key="backgroundColor" value="292929" />
+                                      <entry key="outputName" value="houseicon" />
                                     </map>
                                   </option>
                                 </PersistentState>

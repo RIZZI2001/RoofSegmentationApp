@@ -12,11 +12,11 @@ class Options(context: Context) {
     private val MASK_THRESHOLD = "mask_threshold"
 
     var merge_masks: Boolean
-        get() = preferences.getBoolean(MERGE_MASKS, false)
+        get() = preferences.getBoolean(MERGE_MASKS, true)
         set(value) = preferences.edit().putBoolean(MERGE_MASKS, value).apply()
 
     var color: Int
-        get() = preferences.getInt(COLOR, 0)
+        get() = preferences.getInt(COLOR, 2298413056.toInt())
         set(value) = preferences.edit().putInt(COLOR, value).apply()
 
     var box_threshold: Float

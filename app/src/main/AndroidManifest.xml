@@ -9,10 +9,10 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/house_icon"
-        android:label="ORT Roof Segmentation"
+        android:icon="@mipmap/houseicon"
+        android:label="Roof Segmentation"
         android:largeHeap="true"
-        android:roundIcon="@mipmap/house_icon_round"
+        android:roundIcon="@mipmap/houseicon_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Roof_Segmentation"
         tools:targetApi="31">
