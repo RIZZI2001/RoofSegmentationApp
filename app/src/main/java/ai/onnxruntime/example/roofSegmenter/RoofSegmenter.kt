@@ -172,21 +172,23 @@ internal class RoofSegmenter(
             longArrayOf(1, 3, 640, 640)
         )
 
+        val classAmount = 3
+
         inputTensor.use {
             val startOnnxTime = System.currentTimeMillis() // Start measuring the runtime of the model
             val output = ortSession.run(Collections.singletonMap("images", inputTensor)) // Run the model!
             val endOnnxTime = System.currentTimeMillis() // Stop measuring the runtime of the model
 
             var maskLayers = Array(32) { FloatArray(25600) { 0f } }
-            var boxes = Array(8400) { FloatArray(5) { 0f } }
+            var boxes = Array(8400) { FloatArray(classAmount + 4) { 0f } }
             var masks = Array(8400) { FloatArray(32) { 0f } }
 
             output.use {
-                //Get outputs with shape output0: (37, 8400) and output1: (32, 160, 160)
+                //Get outputs with shape output0: (36 + classAmount, 8400) and output1: (32, 160, 160)
                 val output0 = (output?.get(0)?.value as? Array<*>)?.get(0) as Array<FloatArray>
                 val output1 = (output?.get(1)?.value as? Array<*>)?.get(0) as Array<Array<FloatArray>>
 
-                //Transpose output0 to shape (8400, 37) so that the 8400 detections are in the first dimension
+                //Transpose output0 to shape (8400, 36 + classAmount)hat the 8400 detections are in the first dimension
                 var output0Transposed = transpose2DArray(output0.map { it.toTypedArray() }.toTypedArray())
 
                 //Reshape output1 to shape (32, 25600) so that layer is one-dimensional
@@ -195,10 +197,10 @@ internal class RoofSegmenter(
                 }.toTypedArray()
 
                 // Split output0 into boxes and masks:
-                // boxes: (8400, 5) with each entry being xCenter, yCenter, width, height, confidenceOfDetection
+                // boxes: (8400, 4 + classAmount) with each entry being xCenter, yCenter, width, height, confidencesOfDetections
                 // masks: (8400, 32) with each entry being the factor to multiply the corresponding mask layer to get the correct mask values in the bounding box
-                boxes = output0Transposed.map { it.copyOfRange(0, 5).toFloatArray() }.toTypedArray()
-                masks = output0Transposed.map { it.copyOfRange(5, 37).toFloatArray() }.toTypedArray()
+                boxes = output0Transposed.map { it.copyOfRange(0, 4 + classAmount).toFloatArray() }.toTypedArray()
+                masks = output0Transposed.map { it.copyOfRange(4 + classAmount, 36 + classAmount).toFloatArray() }.toTypedArray()
             }
             output.close() // Close the output to free up memory
 
@@ -206,7 +208,7 @@ internal class RoofSegmenter(
             val croppedMasks = ArrayList<Array<BooleanArray>>() // Stores the cropped masks
             for (i in boxes.indices) {
                 val box = boxes[i]
-                if(box[4] > options.box_threshold) {
+                if(box[4] > options.box_threshold) { // Only consider detections with confidence in class roof > options.box_threshold
                     // converting bounding box from xc, yx, width, height to x1, y1, x2, y2 and scaling from 640x640 to 160x160
                     val x1 = ((box[0]-box[2]/2)/640*160).roundToInt().toFloat()
                     val x2 = ((box[0]+box[2]/2)/640*160).roundToInt().toFloat()
@@ -220,7 +222,9 @@ internal class RoofSegmenter(
                             maskShape[k] += maskLayers[j][k] * masks[i][j]
                         }
                     }
+                    //Storing detection as: x1, y1, x2, y2, confidence, mask index
                     detections.add(floatArrayOf(x1, y1, x2, y2, box[4], croppedMasks.size.toFloat()))
+                    //Storing the cropped mask
                     croppedMasks.add(getMask(maskShape, floatArrayOf(x1, y1, x2, y2), options.mask_threshold))
                 }
             }
@@ -246,8 +250,8 @@ internal class RoofSegmenter(
                     for (j in 0 until mask[0].size) {
                         if(options.merge_masks) {
                             // Using or operator to combine overlapping masks
-                            val currentValue = fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()]
-                            fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()] = currentValue || mask[i][j]
+                            val currentState = fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()]
+                            fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()] = currentState || mask[i][j]
                         } else {
                             fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()] = mask[i][j]
                         }
