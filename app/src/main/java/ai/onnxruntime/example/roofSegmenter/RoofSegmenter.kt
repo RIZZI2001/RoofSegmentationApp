@@ -39,7 +39,7 @@ internal class RoofSegmenter(
                 for (col in 0 until 640) {
                     val value = mat.get(row, col)[channel].toFloat()
                     val index = channel * 409600 + row * 640 + col
-                    floatArray[index] = value/255
+                    floatArray[index] = value/255 //Normalize the pixel values to be between 0 and 1
                 }
             }
         }
@@ -88,24 +88,25 @@ internal class RoofSegmenter(
         return if (unionArea > 0) intersectionArea / unionArea else 0f
     }
 
-    // Applies a sigmoid function to the mask pixel and checks if it is above the threshold of 0.7
+    // Applies a sigmoid function to the mask pixel to keep values between 0 and 1 and represent its probability
+    // Then checks if it is above the maskThreshold
     private fun sigThreshold(x: Float, maskThreshold: Float): Boolean {
         val sig = 1 / (1 + exp(-x).toFloat())
         return sig > maskThreshold
     }
 
-    // Creates a mask of booleans of the selected bounding box by cutting out the mask and applying the sigThreshold
+    // Creates a mask of booleans of the selected bounding box by creating a mask cutout and applying the sigThreshold to each pixel
     private fun getMask(flatMask: FloatArray, box: FloatArray, maskThreshold: Float): Array<BooleanArray> {
-        val mask = Array(160) { i ->
-            BooleanArray(160) { j ->
-                sigThreshold(flatMask[i * 160 + j], maskThreshold)
+        val (x1, y1, x2, y2) = box.map { it.toInt() }
+        val mask = Array(y2 - y1) { i ->
+            BooleanArray(x2 - x1) { j ->
+                sigThreshold(flatMask[(i + y1) * 160 + (j + x1)], maskThreshold)
             }
         }
-        val (x1, y1, x2, y2) = box.map { it.toInt() }
-        return mask.copyOfRange(y1, y2).map { it.copyOfRange(x1, x2) }.toTypedArray()
+        return mask
     }
 
-    // Creates an overlay bitmap from the mask with specified color and alpha
+    // Creates an overlay bitmap from the mask with specified color and alpha to lay over the original image
     private fun createMaskOverlayBitmap(mask: Array<BooleanArray>, rgba: IntArray): Bitmap {
         val width = mask[0].size
         val height = mask.size
@@ -144,7 +145,7 @@ internal class RoofSegmenter(
     // Main function that performs roof segmentation
     fun segmentRoof(context: Context, bitmap: Bitmap, ortEnv: OrtEnvironment, ortSession: OrtSession): Result? {
         val fullStartTime = System.currentTimeMillis() // Start measuring the runtime of the whole function
-        var result: Result? = Result()
+        var result: Result? = Result() //Initialize instance of Result class
 
         val options = Options(context)
 
@@ -166,12 +167,14 @@ internal class RoofSegmenter(
 
         val floatBuffer = floatBufferFromMat(mat)
 
+        //This is the format the model expects the input tensor to be in
         val inputTensor = OnnxTensor.createTensor(
             ortEnv,
             floatBuffer,
             longArrayOf(1, 3, 640, 640)
         )
 
+        //Classes: roof, solar-panel, window
         val classAmount = 3
 
         inputTensor.use {
@@ -181,7 +184,7 @@ internal class RoofSegmenter(
 
             var maskLayers = Array(32) { FloatArray(25600) { 0f } }
             var boxes = Array(8400) { FloatArray(classAmount + 4) { 0f } }
-            var masks = Array(8400) { FloatArray(32) { 0f } }
+            var maskWeights = Array(8400) { FloatArray(32) { 0f } }
 
             output.use {
                 //Get outputs with shape output0: (36 + classAmount, 8400) and output1: (32, 160, 160)
@@ -191,7 +194,7 @@ internal class RoofSegmenter(
                 //Transpose output0 to shape (8400, 36 + classAmount)hat the 8400 detections are in the first dimension
                 var output0Transposed = transpose2DArray(output0.map { it.toTypedArray() }.toTypedArray())
 
-                //Reshape output1 to shape (32, 25600) so that layer is one-dimensional
+                //Reshape output1 to shape (32, 25600) so that each layer is one-dimensional
                 maskLayers = output1.map { plane ->
                     plane.flatMap { row -> row.toList() }.toFloatArray()
                 }.toTypedArray()
@@ -200,11 +203,11 @@ internal class RoofSegmenter(
                 // boxes: (8400, 4 + classAmount) with each entry being xCenter, yCenter, width, height, confidencesOfDetections
                 // masks: (8400, 32) with each entry being the factor to multiply the corresponding mask layer to get the correct mask values in the bounding box
                 boxes = output0Transposed.map { it.copyOfRange(0, 4 + classAmount).toFloatArray() }.toTypedArray()
-                masks = output0Transposed.map { it.copyOfRange(4 + classAmount, 36 + classAmount).toFloatArray() }.toTypedArray()
+                maskWeights = output0Transposed.map { it.copyOfRange(4 + classAmount, 36 + classAmount).toFloatArray() }.toTypedArray()
             }
             output.close() // Close the output to free up memory
 
-            val detections = ArrayList<FloatArray>() // Stores the detections with confidence > 0.5 and their corresponding mask index
+            val detections = ArrayList<FloatArray>() // Stores the detections with confidence > box_threshold and their corresponding mask index in croppedMasks
             val croppedMasks = ArrayList<Array<BooleanArray>>() // Stores the cropped masks
             for (i in boxes.indices) {
                 val box = boxes[i]
@@ -216,13 +219,13 @@ internal class RoofSegmenter(
                     val y2 = ((box[1]+box[3]/2)/640*160).roundToInt().toFloat()
                     val maskShape = FloatArray(25600)
 
-                    // Multiply the mask layers with the corresponding mask factor and add them up to get the mask
-                    for (j in 0 until 32) {
-                        for (k in 0 until 25600) {
-                            maskShape[k] += maskLayers[j][k] * masks[i][j]
+                    // Multiply the mask layers with the corresponding mask weight and add them up to get the mask
+                    for (layerIndex in 0 until 32) {
+                        for (pixelIndex in 0 until 25600) {
+                            maskShape[pixelIndex] += maskLayers[layerIndex][pixelIndex] * maskWeights[i][layerIndex]
                         }
                     }
-                    //Storing detection as: x1, y1, x2, y2, confidence, mask index
+                    //Storing detection as: x1, y1, x2, y2, confidence, mask index (current size of croppedMasks)
                     detections.add(floatArrayOf(x1, y1, x2, y2, box[4], croppedMasks.size.toFloat()))
                     //Storing the cropped mask
                     croppedMasks.add(getMask(maskShape, floatArrayOf(x1, y1, x2, y2), options.mask_threshold))
@@ -232,7 +235,7 @@ internal class RoofSegmenter(
             if(detections.isEmpty()) {
                 return null
             }
-            // Sort the detections by confidence
+            // Sort the detections by confidence in roof class
             detections.sortByDescending { it[4] }
 
             // Create a full mask from the cropped masks
@@ -241,24 +244,26 @@ internal class RoofSegmenter(
                     false
                 }
             }
+            //Now all the masks are getting combined to one mask for the image
             while (detections.isNotEmpty()) {
                 val currentDet = detections[0].copyOf() // Get the detection with the highest confidence
                 val mask = croppedMasks[currentDet[5].toInt()] // Get the corresponding mask
 
                 // Add the mask to the full mask at the correct position.
-                for (i in mask.indices) {
-                    for (j in 0 until mask[0].size) {
+                for (row in mask.indices) {
+                    for (column in 0 until mask[0].size) {
                         if(options.merge_masks) {
                             // Using or operator to combine overlapping masks
-                            val currentState = fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()]
-                            fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()] = currentState || mask[i][j]
+                            val currentState = fullMask[row+currentDet[1].toInt()][column+currentDet[0].toInt()]
+                            fullMask[row+currentDet[1].toInt()][column+currentDet[0].toInt()] = currentState || mask[row][column]
                         } else {
-                            fullMask[i+currentDet[1].toInt()][j+currentDet[0].toInt()] = mask[i][j]
+                            // Overwriting overlapping masks
+                            fullMask[row+currentDet[1].toInt()][column+currentDet[0].toInt()] = mask[row][column]
                         }
                     }
                 }
 
-                // Remove all detections that have an IoU > 0.7 with the current detection to eliminate overlapping detections
+                // Remove all detections that have an IoU > 0.7 with the current detection to eliminate overlapping detections. This includes the current detection itself.
                 detections.retainAll { iou(it, currentDet) < 0.7 }
             }
             val fullEndTime = System.currentTimeMillis() // Stop measuring the runtime of the whole function
