@@ -5,8 +5,10 @@ import ai.onnxruntime.extensions.OrtxPackage
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
@@ -35,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private var exportButton: Button? = null
     private lateinit var options: Options
     private var optionsPanel: OptionsPanel? = null
+    private var imageName = "default_image"
 
     @SuppressLint("UseCompatLoadingForDrawables")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,21 +94,52 @@ class MainActivity : AppCompatActivity() {
         loadImg.launch(intent)
     }
 
+
     private val loadImg =
         registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
-        ) {
-            if (it.resultCode == Activity.RESULT_OK) {
-                inputImage?.setImageURI(it.data?.data)
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val uri = result.data?.data
+                uri?.let { imageUri ->
+                    val imageFileName = getImageFileName(imageUri)
+                    // Now you can use 'imageFileName' as the image name without the file extension
+                    imageName = imageFileName
+                    inputImage?.setImageURI(imageUri)
+                }
             }
         }
+
+
+        //{
+        //    if (it.resultCode == Activity.RESULT_OK) {
+        //        inputImage?.setImageURI(it.data?.data)
+        //        imageName = "gallery_image"
+        //    }
+        //}
+
+    private fun getImageFileName(uri: Uri): String {
+        val cursor = contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val displayNameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (displayNameIndex != -1) {
+                    val fileName = it.getString(displayNameIndex)
+                    // Remove the file extension (if any)
+                    return fileName.substringBeforeLast('.')
+                }
+            }
+        }
+        // Fallback: Use the last segment of the URI
+        return uri.lastPathSegment ?: "unknown_image"
+    }
 
     private fun exportImageToGallery() {
         val bitmap = outputImage?.drawable?.toBitmap()
         MediaStore.Images.Media.insertImage(
             contentResolver,
             bitmap,
-            UUID.randomUUID().toString() + ".png",
+            "$imageName.png",
             "Roof Segmentation"
         )
         Toast.makeText(baseContext, "Image saved to gallery", Toast.LENGTH_SHORT)
